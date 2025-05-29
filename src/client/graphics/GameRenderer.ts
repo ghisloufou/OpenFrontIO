@@ -22,6 +22,7 @@ import { PlayerInfoOverlay } from "./layers/PlayerInfoOverlay";
 import { PlayerPanel } from "./layers/PlayerPanel";
 import { PlayerTeamLabel } from "./layers/PlayerTeamLabel";
 import { RadialMenu } from "./layers/RadialMenu";
+import { ReplayPanel } from "./layers/ReplayPanel";
 import { SpawnTimer } from "./layers/SpawnTimer";
 import { StructureLayer } from "./layers/StructureLayer";
 import { TeamStats } from "./layers/TeamStats";
@@ -40,7 +41,7 @@ export function createRenderer(
 ): GameRenderer {
   const transformHandler = new TransformHandler(game, eventBus, canvas);
 
-  const uiState = { attackRatio: 20 };
+  const uiState: UIState = { attackRatio: 20, replayInterval: 5 };
 
   //hide when the game renders
   const startingModal = document.querySelector(
@@ -86,6 +87,15 @@ export function createRenderer(
   controlPanel.eventBus = eventBus;
   controlPanel.uiState = uiState;
   controlPanel.game = game;
+
+  const replayPanel = document.querySelector("replay-panel");
+  if (!(replayPanel instanceof ReplayPanel)) {
+    consolex.error("ReplayPanel element not found in the DOM");
+  } else {
+    replayPanel.eventBus = eventBus;
+    replayPanel.uiState = uiState;
+    replayPanel.game = game;
+  }
 
   const eventsDisplay = document.querySelector(
     "events-display",

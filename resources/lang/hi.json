@@ -224,5 +224,8 @@
     "continental": "महाद्वीपीय",
     "regional": "रीजनल",
     "fantasy": "अन्य"
+  },
+  "replay_panel": {
+    "replay_speed": "प्लेबैक गत"
   }
 }

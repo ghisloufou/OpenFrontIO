@@ -1,4 +1,5 @@
 import { consolex } from "../core/Consolex";
+import { EventBus } from "../core/EventBus";
 import {
   AllPlayersStats,
   ClientMessage,
@@ -13,6 +14,7 @@ import {
 } from "../core/Schemas";
 import { createGameRecord, decompressGameRecord, replacer } from "../core/Util";
 import { LobbyConfig } from "./ClientGameRunner";
+import { ReplayIntervalEvent } from "./InputHandler";
 import { getPersistentID } from "./Main";
 
 export class LocalServer {
@@ -25,6 +27,7 @@ export class LocalServer {
   private startedAt: number;
 
   private paused = false;
+  private replayInterval = 5;
 
   private winner: ClientSendWinnerMessage | null = null;
   private allPlayersStats: AllPlayersStats = {};
@@ -39,22 +42,24 @@ export class LocalServer {
     private clientConnect: () => void,
     private clientMessage: (message: ServerMessage) => void,
     private isReplay: boolean,
+    private eventBus: EventBus,
   ) {}
 
   start() {
-    this.turnCheckInterval = setInterval(() => {
-      if (this.turnsExecuted === this.turns.length) {
-        if (
-          this.isReplay ||
-          Date.now() >
-            this.turnStartTime + this.lobbyConfig.serverConfig.turnIntervalMs()
-        ) {
-          this.turnStartTime = Date.now();
-          // End turn on the server means the client will start processing the turn.
-          this.endTurn();
-        }
+    this.eventBus.on(ReplayIntervalEvent, (event) => {
+      let interval = event.replayInterval;
+      if (interval < 5) {
+        interval = 5;
       }
-    }, 5);
+      if (interval > 250) {
+        interval = 250;
+      }
+
+      this.replayInterval = interval;
+      this.updateInterval();
+    });
+
+    this.updateInterval();
 
     this.startedAt = Date.now();
     this.clientConnect();
@@ -74,6 +79,26 @@ export class LocalServer {
         turns: [],
       }),
     );
+  }
+
+  // Update the interval dynamically
+  updateInterval() {
+    clearInterval(this.turnCheckInterval); // Clear the existing interval
+
+    // Set the new interval
+    this.turnCheckInterval = setInterval(() => {
+      if (this.turnsExecuted === this.turns.length) {
+        if (
+          this.isReplay ||
+          Date.now() >
+            this.turnStartTime + this.lobbyConfig.serverConfig.turnIntervalMs()
+        ) {
+          this.turnStartTime = Date.now();
+          // End turn on the server means the client will start processing the turn.
+          this.endTurn();
+        }
+      }
+    }, this.replayInterval);
   }
 
   pause() {

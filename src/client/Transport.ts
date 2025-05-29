@@ -275,6 +275,7 @@ export class Transport {
       onconnect,
       onmessage,
       this.lobbyConfig.gameRecord !== undefined,
+      this.eventBus,
     );
     this.localServer.start();
   }
